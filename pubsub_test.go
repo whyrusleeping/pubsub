@@ -88,12 +88,18 @@ func TestUnsubAll(t *testing.T) {
 
 	ps.Unsub(ch1)
 
-	m, ok := <-ch1
+	_, ok := <-ch1
 	require.Equal(t, ok, false)
 
 	ps.Pub("hi", "t1")
-	m, ok = <-ch2
+	m := <-ch2
 	require.Equal(t, m, "hi")
+
+	ps.Pub("bye", "t1")
+	ps.Unsub(ch2)
+	_, ok = <-ch2
+	// unsubscribing all should drain channel.
+	require.Equal(t, ok, false)
 
 	ps.Shutdown()
 }
