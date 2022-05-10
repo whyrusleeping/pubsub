@@ -140,9 +140,12 @@ func TestUnsubAfterClose(t *testing.T) {
 
 func TestShutdown(t *testing.T) {
 	start := runtime.NumGoroutine()
-	New(10).Shutdown()
-	time.Sleep(1)
-	require.Equal(t, runtime.NumGoroutine()-start, 1)
+	for i := 0; i < 10; i++ {
+		New(10).Shutdown()
+	}
+	time.Sleep(1 * time.Second)
+	// 2 because go...
+	require.LessOrEqual(t, runtime.NumGoroutine()-start, 2)
 }
 
 func TestMultiSub(t *testing.T) {
