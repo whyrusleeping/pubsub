@@ -74,13 +74,24 @@ func (ps *PubSub) Pub(msg interface{}, topics ...string) {
 
 // Unsub unsubscribes the given channel from the specified
 // topics. If no topic is specified, it is unsubscribed
-// from all topics.
+// from all topics and the channel is drained.
+//
+// If topics _are_ specified, it is up to the caller to keep draining the subscription channel.
 func (ps *PubSub) Unsub(ch chan interface{}, topics ...string) {
 	if len(topics) == 0 {
-		ps.cmdChan <- cmd{op: unsubAll, ch: ch}
-		return
+		// Keep trying to unsubscribe while also draining the channel to prevent any
+		// deadlocks.
+		for {
+			select {
+			case ps.cmdChan <- cmd{op: unsubAll, ch: ch}:
+				// Drain the sub channel.
+				for range ch {
+				}
+				return
+			case <-ch:
+			}
+		}
 	}
-
 	ps.cmdChan <- cmd{op: unsub, topics: topics, ch: ch}
 }
 
